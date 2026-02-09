@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASL Fingerspelling Recognition System</title>
+    <link rel="stylesheet" href="../static/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="header-text">
+                <h1>ASL Fingerspelling Recognition System</h1>
+                <p class="header-description">
+                    Real-time American Sign Language fingerspelling recognition using your webcam
+                </p>
+            </div>
+            <button id="themeToggle" class="theme-toggle" title="Toggle theme">
+                <i data-lucide="moon" class="theme-icon" id="themeIcon"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <!-- Main Recognition Area -->
+        <div class="recognition-grid">
+            <!-- Left Column - Webcam and Controls -->
+            <div class="left-column">
+                <!-- Webcam Preview -->
+                <div class="webcam-card">
+                    <div class="webcam-container">
+                        <div id="cameraInactive" class="camera-inactive">
+                            <i data-lucide="camera-off" class="camera-off-icon"></i>
+                            <p>Camera not active</p>
+                            <p class="camera-instruction">
+                                Click "Start Recognition" to begin capturing ASL fingerspelling
+                            </p>
+                        </div>
+                        <video id="webcamVideo" class="webcam-video" autoplay playsinline muted style="display: none;"></video>
+                        <div id="liveIndicator" class="live-indicator" style="display: none;">
+                            <div class="live-dot"></div>
+                            <span>LIVE</span>
+                        </div>
+                        <div id="frameGuide" class="frame-guide" style="display: none;">
+                            <div class="frame-border">
+                                <div class="frame-corner frame-corner-tl"></div>
+                                <div class="frame-corner frame-corner-tr"></div>
+                                <div class="frame-corner frame-corner-bl"></div>
+                                <div class="frame-corner frame-corner-br"></div>
+                            </div>
+                            <div class="frame-instruction">
+                                Position your hand within the frame
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="controls-card">
+                    <div class="controls-header">
+                        <h3>Recognition Controls</h3>
+                        <div id="detectionInfo" class="detection-info" style="display: none;">
+                            <span class="detection-label">Detected:</span>
+                            <div class="letter-badge" id="letterBadge">-</div>
+                            <div class="confidence-badge" id="confidenceBadge">0%</div>
+                        </div>
+                    </div>
+                    <div class="controls-content">
+                        <!-- Main Controls -->
+                        <div class="main-controls">
+                            <button id="startBtn" class="start-btn">
+                                <i data-lucide="play" class="btn-icon"></i>
+                                Start Recognition
+                            </button>
+                            <button id="stopBtn" class="stop-btn" style="display: none;">
+                                <i data-lucide="square" class="btn-icon"></i>
+                                Stop Recognition
+                            </button>
+                        </div>
+
+                        <!-- Letter Controls -->
+                        <div id="letterControls" class="letter-controls" style="display: none;">
+                            <div class="letter-control-buttons">
+                                <button id="addLetterBtn" class="add-letter-btn" disabled>
+                                    <i data-lucide="plus" class="btn-icon"></i>
+                                    Add Letter to Word
+                                </button>
+                                <button id="speakBtn" class="icon-btn" title="Speak current word">
+                                    <i data-lucide="volume-2"></i>
+                                </button>
+                                <button id="clearBtn" class="icon-btn" title="Clear word">
+                                    <i data-lucide="trash-2"></i>
+                                </button>
+                            </div>
+                            <p id="confidenceWarning" class="confidence-warning" style="display: none;">
+                                Confidence too low (need >70% to add letter)
+                            </p>
+                        </div>
+
+                        <!-- Instructions -->
+                        <div class="instructions">
+                            <h4>Instructions:</h4>
+                            <ul>
+                                <li>• Position your hand clearly within the camera frame</li>
+                                <li>• Hold each letter pose for 2-3 seconds</li>
+                                <li>• Ensure good lighting for best recognition</li>
+                                <li>• Letters with >70% confidence can be added to words</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Results -->
+            <div class="right-column">
+                <!-- Current Recognition -->
+                <div class="result-card">
+                    <h3>Current Recognition</h3>
+                    <div class="result-content">
+                        <div id="currentResult" class="current-result">
+                            <div class="result-placeholder">
+                                <div class="hand-emoji">👋</div>
+                                <p>Show a letter to begin recognition</p>
+                            </div>
+                        </div>
+                        <div id="letterDisplay" class="letter-display" style="display: none;">
+                            <div class="letter-circle" id="letterCircle">
+                                <span id="displayLetter">A</span>
+                                <svg class="confidence-ring" viewBox="0 0 100 100">
+                                    <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" stroke-width="2" class="ring-bg"/>
+                                    <circle cx="50" cy="50" r="45" fill="none" stroke-width="3" stroke-linecap="round" class="ring-progress" id="confidenceRing"/>
+                                </svg>
+                            </div>
+                            <div class="confidence-info">
+                                <p>Confidence: <span id="confidenceText">0%</span></p>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="progressFill"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Word Builder -->
+                <div class="word-card">
+                    <h3>Word Builder</h3>
+                    <div class="word-content">
+                        <div id="wordDisplay" class="word-display">
+                            <p class="word-placeholder">Letters will appear here as you spell words</p>
+                        </div>
+                        <div id="wordResult" class="word-result" style="display: none;">
+                            <div class="word-text" id="wordText"></div>
+                            <p class="word-count" id="wordCount">0 letters spelled</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Confidence Chart -->
+                <div id="chartCard" class="chart-card" style="display: none;">
+                    <h3>Prediction Confidence</h3>
+                    <div class="chart-container">
+                        <canvas id="confidenceChart"></canvas>
+                    </div>
+                    <div class="chart-legend">
+                        <p>Top 5 predicted letters with confidence levels</p>
+                        <div class="legend-items">
+                            <div class="legend-item">
+                                <div class="legend-color legend-high"></div>
+                                <span>High (>80%)</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color legend-medium"></div>
+                                <span>Medium (60-80%)</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color legend-low"></div>
+                                <span>Low (<60%)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gesture Guide -->
+        <div class="gesture-card">
+            <div class="gesture-header">
+                <button id="gestureToggle" class="gesture-toggle">
+                    <div class="gesture-title">
+                        <i data-lucide="hand" class="gesture-icon"></i>
+                        <h3>ASL Fingerspelling Reference Guide</h3>
+                        <div class="letter-count-badge">26 letters</div>
+                    </div>
+                    <i data-lucide="chevron-down" class="chevron-icon" id="gestureChevron"></i>
+                </button>
+            </div>
+            <div id="gestureContent" class="gesture-content" style="display: none;">
+
+                <!-- Interactive Letter Grid -->
+                <div class="interactive-section">
+                    <h4>Interactive Letter Guide</h4>
+                    <div class="gesture-grid" id="gestureGrid">
+                        <!-- Generated by JavaScript -->
+                    </div>
+                </div>
+
+                <div class="gesture-tips">
+                    <h4>Tips for Better Recognition:</h4>
+                    <ul>
+                        <li>• Ensure your hand is well-lit and clearly visible</li>
+                        <li>• Hold each letter pose steady for 2-3 seconds</li>
+                        <li>• Keep your hand within the camera frame guides</li>
+                        <li>• Practice letters with lower recognition accuracy</li>
+                        <li>• Maintain consistent hand positioning</li>
+                        <li>• Refer to the reference chart above for proper hand shapes</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>ASL Fingerspelling Recognition System v1.0 | Built with HTML, CSS & JavaScript</p>
+            <p class="footer-note">
+                Note: This is a demonstration system with mock predictions.
+                In a production system, this would connect to a machine learning backend.
+            </p>
+        </div>
+    </footer>
+
+    <script src="../static/script.js"></script>
+</body>
+</html>
