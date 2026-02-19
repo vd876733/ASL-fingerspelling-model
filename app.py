@@ -122,3 +122,4 @@ def predict():
 if __name__ == '__main__':
     # Run on all interfaces so frontend served from same machine can access
     app.run(host='0.0.0.0', port=5000, debug=False)
+
